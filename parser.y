@@ -82,14 +82,54 @@ Statements:
     /* empty */ { $$ = std::make_shared<ast::Statements>(); }
     | Statements Statement { $$ = $1; $$->push_back($2); }
 
-
+;
 Statement:
     Expr SC { $$ = std::make_shared<ast::ExprStatement>($1); }
     | RETURN Expr SC { $$ = std::make_shared<ast::Return>($2); }
     | RETURN SC { $$ = std::make_shared<ast::Return>(); }
     | BREAK SC { $$ = std::make_shared<ast::Break>(); }
     | CONTINUE SC { $$ = std::make_shared<ast::Continue>(); }
+;
 // TODO FOR YOU MRS CHULMAN :)
+
+Call :
+    ID LPAREN ExpList RPAREN { $$ = std::make_shared<ast::Call>($1, $3);} |
+    ID LPAREN RPAREN {  $$ = std::make_shared<ast::Call>($1); }
+;
+ExpList :
+    Exp { $$ = std::make_shared<ast::ExpList>($1);} |
+    Exp COMMA ExpList {$$ = $3; $$->exps.push_front($1);}
+;
+Type :
+    INT  {$$ = std::make_shared<ast::Type>(3); } |
+    BYTE {$$ = std::make_shared<ast::Type>(2); } |
+    BOOL {$$ = std::make_shared<ast::Type>(1); }
+;
+Exp :
+    LPAREN Exp RPAREN { $$ = std::make_shared<ast::Exp>($2); } |
+    Exp BINOP Exp { $$ = std::make_shared<ast::BinOp>($1, $3, convert_binop($2); }  |
+    ID { $$ = std::make_shared<ast::ID>($1);} |
+    Call { $$ = $1; } |
+    NUM { $$ = std::make_shared<ast::Num>($1); } |
+    NUM B {$$ = std::make_shared<ast::NumB>($1);} |
+    STRING {$$ = std::make_shared<ast::String>($1);} |
+    TRUE {$$ = std::make_shared<ast::Bool>(1);} |
+    FALSE {$$ = std::make_shared<ast::Bool>(0);} |
+    NOT Exp {$$ = std::make_shared<ast::Not>($2);}|
+    Exp RELOP Exp {$$ = std::make_shared<ast::BinOp>($1, $3, convert_relop($2); } |
+    LPAREN Type RPAREN Exp {$$ = std::make_shared<ast::Cast>($4, $2);}
+
 %%
+
+
+void yyerror(const char * message) {
+    errorSyn(yylineno);
+    exit(0);
+}
+
+int main() {
+    return yyparse();
+}
+
 
 // TODO: Place any additional code here
