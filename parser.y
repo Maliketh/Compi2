@@ -156,9 +156,13 @@ Type :
     INT  {$$ = std::make_shared<ast::Type>(ast::BuiltInType::INT); } |
     BYTE {$$ = std::make_shared<ast::Type>(ast::BuiltInType::BYTE); } |
     BOOL {$$ = std::make_shared<ast::Type>(ast::BuiltInType::BOOL); }|
-    STRING {$$ = std::make_shared<ast::Type>(ast::BuiltInType::STRING); }
 ;
-Exp :
+
+Exp_cast :
+    LPAREN Type RPAREN Exp {$$ = std::make_shared<ast::Cast>(std::dynamic_pointer_cast<ast::Exp>($2), std::dynamic_pointer_cast<ast::Type>($1));}
+    ;
+
+Exp_t :
     LPAREN Exp RPAREN { $$ = $2; } |
     Exp BINOP_ADD Exp {
                       auto arg1 = std::dynamic_pointer_cast<ast::Exp>($1);
@@ -215,9 +219,11 @@ Exp :
     Exp RELOP_GEQ Exp {auto arg1 = std::dynamic_pointer_cast<ast::Exp>($1);
                        auto arg2 = std::dynamic_pointer_cast<ast::Exp>($3);
                        $$ = std::make_shared<ast::RelOp>(arg1, arg2, ast::RelOpType::GE);
-                       } |
+                       }
+;
+Exp : Exp_cast | Exp_t ;
 
-    LPAREN Type RPAREN Exp {$$ = std::make_shared<ast::Cast>(std::dynamic_pointer_cast<ast::Exp>($2), std::dynamic_pointer_cast<ast::Type>($1));}
+
 
 %%
 
@@ -227,9 +233,7 @@ void yyerror(const char * message) {
     exit(0);
 }
 
-int main() {
-    return yyparse();
-}
+
 
 
 // TODO: Place any additional code here
