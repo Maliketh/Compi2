@@ -489,35 +489,35 @@ namespace ast {
     };
 }
 
-BinOpType convert_binop(std::string str)
+int convert_binop(std::string str)
 {
-    BinOpType res = 0;
+    int res = 0;
     if (str == "+")
-        res = ADD;
+        res = ast::ADD;
     if (str == "+")
-        res = SUB;
+        res = ast::SUB;
     if (str == "+")
-        res = MUL;
+        res = ast::MUL;
     if (str == "+")
-        res = DIV;
+        res = ast::DIV;
     return res;
 }
 
-BinOpType convert_relop(std::string str)
+int convert_relop(std::string str)
 {
-    BinOpType res = 0;
+    int res = 0;
     if (str == "=")
-        res = EQ;
+        res = ast::EQ;
     if (str == "!=")
-        res = NE;
+        res = ast::NE;
     if (str == "<")
-        res = LT;
+        res = ast::LT;
     if (str == ">")
-        res = GT;
+        res = ast::GT;
     if (str == "<=")
-        res = LE;
+        res = ast::LE;
     if (str == ">=")
-        res = GE;
+        res = ast::GE;
     return res;
 }
 #define YYSTYPE std::shared_ptr<ast::Node>
