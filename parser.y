@@ -129,10 +129,19 @@ Statements:
 
 ;
 Statement:
-      RETURN Exp SC { $$ = std::make_shared<ast::Return>(std::dynamic_pointer_cast<ast::Exp>($2)); }
-    | RETURN SC { $$ = std::make_shared<ast::Return>(); }
-    | BREAK SC { $$ = std::make_shared<ast::Break>(); }
-    | CONTINUE SC { $$ = std::make_shared<ast::Continue>(); }
+           LBRACE Statements RBRACE { $$ = $2; }
+         | Type ID SC { $$ = std::make_shared<ast::VarDecl>(std::dynamic_pointer_cast<ast::ID>($2), std::dynamic_pointer_cast<ast::Type>($1)); }
+         | Type ID ASSIGN Exp SC { $$ = std::make_shared<ast::VarDecl>(std::dynamic_pointer_cast<ast::ID>($2), std::dynamic_pointer_cast<ast::Type>($1), std::dynamic_pointer_cast<ast::Exp>($4)); }
+         | ID ASSIGN Exp SC { $$ = std::make_shared<ast::Assign>(std::dynamic_pointer_cast<ast::ID>($1), std::dynamic_pointer_cast<ast::Exp>($3)); }
+         | Call SC { $$ = $1; }
+         | RETURN SC { $$ = std::make_shared<ast::Return>(); }
+         | RETURN Exp SC { $$ = std::make_shared<ast::Return>(std::dynamic_pointer_cast<ast::Exp>($2)); }
+         | IF LPAREN Exp RPAREN Statement { $$ = std::make_shared<ast::If>(std::dynamic_pointer_cast<ast::Exp>($3), std::dynamic_pointer_cast<ast::Statement>($5)); }
+         | IF LPAREN Exp RPAREN Statement ELSE Statement { $$ = std::make_shared<ast::If>(std::dynamic_pointer_cast<ast::Exp>($3), std::dynamic_pointer_cast<ast::Statement>($5),  std::dynamic_pointer_cast<ast::Statement>($7)); }
+         | WHILE LPAREN Exp RPAREN Statement { $$ = std::make_shared<ast::While>(std::dynamic_pointer_cast<ast::Exp>($3),std::dynamic_pointer_cast<ast::Statement>($5)); }
+         | BREAK SC { $$ = std::make_shared<ast::Break>(); }
+         | CONTINUE SC { $$ = std::make_shared<ast::Continue>(); }
+
 ;
 // TODO FOR YOU MRS CHULMAN :)
 

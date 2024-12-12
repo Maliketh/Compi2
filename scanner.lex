@@ -7,11 +7,11 @@
 %option noyywrap
 
 whitespace           [ \t\n\r]
+num                 (0|[1-9][0-9]*)
+
+printable_ascii    [\x20-\x21\x23-\x7E]
 
 
-printable_ascii    [\x20-\x7E]
-
-illegal_string      ({string}|{illegal_escape}|{illegal_chars})
 
 %%
 
@@ -64,8 +64,7 @@ continue                return CONTINUE;
 {whitespace}            ;
 .                       return ERR_GENERAL;
 
-\"[^\"]*                return ERR_UNCLOSED_STR;
-"([^"\\]*(\\.[^"\\]*)*  return ERR_UNCLOSED_STR;
+
 
 
 
