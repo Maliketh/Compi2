@@ -21,7 +21,7 @@ using namespace std;
 %token VOID
 %token INT
 %token BYTE
-%token B
+%token NUM_B
 %token BOOL
 %token TRUE
 %token FALSE
@@ -96,7 +96,7 @@ Call :
 ;
 ExpList :
     Exp { $$ = std::make_shared<ast::ExpList>($1);} |
-    Exp COMMA ExpList {$$ = $3; $$->exps.push_front($1);}
+    Exp COMMA ExpList {$$ = std::dynamic_pointer_cast<ast::ExpList>($3); $$->exps.push_front($1);}
 ;
 Type :
     INT  {$$ = std::make_shared<ast::Type>(3); } |
@@ -105,16 +105,16 @@ Type :
 ;
 Exp :
     LPAREN Exp RPAREN { $$ = std::make_shared<ast::Exp>($2); } |
-    Exp BINOP Exp { $$ = std::make_shared<ast::BinOp>($1, $3, convert_binop($2); }  |
+    Exp BINOP Exp { $$ = std::make_shared<ast::BinOp>($1, $3, convert_binop($2)); }  |
     ID { $$ = std::make_shared<ast::ID>($1);} |
-    Call { $$ = $1; } |
+    Call { $$ = std::dynamic_pointer_cast<ast::Call>($1); } |
     NUM { $$ = std::make_shared<ast::Num>($1); } |
-    NUM B {$$ = std::make_shared<ast::NumB>($1);} |
+    NUM_B {$$ = std::make_shared<ast::NumB>($1);} |
     STRING {$$ = std::make_shared<ast::String>($1);} |
     TRUE {$$ = std::make_shared<ast::Bool>(1);} |
     FALSE {$$ = std::make_shared<ast::Bool>(0);} |
     NOT Exp {$$ = std::make_shared<ast::Not>($2);}|
-    Exp RELOP Exp {$$ = std::make_shared<ast::BinOp>($1, $3, convert_relop($2); } |
+    Exp RELOP Exp {$$ = std::make_shared<ast::BinOp>($1, $3, convert_relop($2)); } |
     LPAREN Type RPAREN Exp {$$ = std::make_shared<ast::Cast>($4, $2);}
 
 %%
