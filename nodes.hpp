@@ -1,112 +1,525 @@
-#include "nodes.hpp"
-#include <string>
-#include <utility>
+#ifndef NODES_HPP
+#define NODES_HPP
 
-extern int yylineno;
+#include <memory>
+#include <string>
+#include <vector>
+#include "visitor.hpp"
 
 namespace ast {
 
-    Node::Node() : line(yylineno) {}
+    /* Arithmetic operations */
+    enum BinOpType {
+        ADD, // Addition
+        SUB, // Subtraction
+        MUL, // Multiplication
+        DIV  // Division
+    };
 
-    Num::Num(const char *str) : Exp(), value(std::stoi(str)) {}
+    /* Relational operations */
+    enum RelOpType {
+        EQ, // Equal
+        NE, // Not equal
+        LT, // Less than
+        GT, // Greater than
+        LE, // Less than or equal
+        GE  // Greater than or equal
+    };
 
-    NumB::NumB(const char *str) : Exp(), value(std::stoi(str)) {}
+    /* Built-in types */
+    enum BuiltInType {
+        VOID,
+        BOOL,
+        BYTE,
+        INT,
+        STRING
+    };
 
-    String::String(const char *str) : Exp(), value(str) {
-        // Remove the quotes
-        value = value.substr(1, value.size() - 2);
-    }
+    /* Base class for all AST nodes */
+    class Node {
+    public:
+        // Line number in the source code
+        int line;
 
-    Bool::Bool(bool value) : Exp(), value(value) {}
+        // Use this constructor only while parsing in bison or flex
+        Node();
 
-    ID::ID(const char *str) : Exp(), value(str) {}
+        // Accept method for visitor pattern
+        virtual void accept(Visitor &visitor) = 0;
+    };
 
-    BinOp::BinOp(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right, BinOpType op)
-            : Exp(), left(std::move(left)), right(std::move(right)), op(op) {}
+    /* Base class for all expressions */
+    class Exp : virtual public Node {
+    public:
+        Exp() = default;
+    };
 
-    RelOp::RelOp(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right, RelOpType op)
-            : Exp(), left(std::move(left)), right(std::move(right)), op(op) {}
+    /* Base class for all statements */
+    class Statement : virtual public Node {
+    };
 
-    Type::Type(BuiltInType type) : Node(), type(type) {}
+    /* Number literal */
+    class Num : public Exp {
+    public:
+        // Value of the number
+        int value;
 
-    Cast::Cast(std::shared_ptr<Exp> exp, std::shared_ptr<Type> target_type)
-            : Exp(), exp(std::move(exp)), target_type(std::move(target_type)) {}
+        // Constructor that receives a C-style string that represents the number
+        explicit Num(const char *str);
 
-    Not::Not(std::shared_ptr<Exp> exp) : Exp(), exp(std::move(exp)) {}
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    And::And(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right)
-            : Exp(), left(std::move(left)), right(std::move(right)) {}
+    /* Byte literal */
+    class NumB : public Exp {
+    public:
+        // Value of the number
+        int value;
 
-    Or::Or(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right)
-            : Exp(), left(std::move(left)), right(std::move(right)) {}
+        // Constructor that receives a C-style (including b character) string that represents the number
+        explicit NumB(const char *str);
 
-    ExpList::ExpList(std::shared_ptr<Exp> exp) : Node(), exps({std::move(exp)}) {}
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    void ExpList::push_front(const std::shared_ptr<Exp> &exp) {
-        exps.insert(exps.begin(), exp);
-    }
+    /* String literal */
+    class String : public Exp {
+    public:
+        // Value of the string
+        std::string value;
 
-    void ExpList::push_back(const std::shared_ptr<Exp> &exp) {
-        exps.push_back(exp);
-    }
+        // Constructor that receives a C-style string that represents the string *including quotes*
+        explicit String(const char *str);
 
-    Call::Call(std::shared_ptr<ID> func_id, std::shared_ptr<ExpList> args)
-            : Exp(), func_id(std::move(func_id)), args(std::move(args)) {}
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    Call::Call(std::shared_ptr<ID> func_id)
-            : Exp(), func_id(std::move(func_id)), args(std::make_shared<ExpList>()) {}
+    /* Boolean literal */
+    class Bool : public Exp {
+    public:
+        // Value of the boolean
+        bool value;
 
-    Statements::Statements(std::shared_ptr<Statement> statement) : Statement(), statements({std::move(statement)}) {}
+        // Constructor that receives the boolean value
+        explicit Bool(bool value);
 
-    void Statements::push_front(const std::shared_ptr<Statement> &statement) {
-        statements.insert(statements.begin(), statement);
-    }
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    void Statements::push_back(const std::shared_ptr<Statement> &statement) {
-        statements.push_back(statement);
-    }
+    /* Identifier */
+    class ID : public Exp {
+    public:
+        // Name of the identifier
+        std::string value;
 
-    Return::Return(std::shared_ptr<Exp> exp) : Statement(), exp(std::move(exp)) {}
+        // Constructor that receives a C-style string that represents the identifier
+        explicit ID(const char *str);
 
-    If::If(std::shared_ptr<Exp> condition, std::shared_ptr<Statement> then, std::shared_ptr<Statement> otherwise)
-            : Statement(), condition(std::move(condition)), then(std::move(then)), otherwise(std::move(otherwise)) {}
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    While::While(std::shared_ptr<Exp> condition, std::shared_ptr<Statement> body)
-            : Statement(), condition(std::move(condition)),
-              body(std::move(body)) {}
 
-    VarDecl::VarDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> type, std::shared_ptr<Exp> init_exp)
-            : Statement(), id(std::move(std::move(id))), type(std::move(type)), init_exp(std::move(init_exp)) {}
 
-    Assign::Assign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp)
-            : Statement(), id(std::move(id)), exp(std::move(exp)) {}
+    /* Binary arithmetic operation */
+    class BinOp : public Exp {
+    public:
+        // Left operand
+        std::shared_ptr<Exp> left;
+        // Right operand
+        std::shared_ptr<Exp> right;
+        // Operation
+        BinOpType op;
 
-    Formal::Formal(std::shared_ptr<ID> id, std::shared_ptr<Type> type)
-            : Node(), id(std::move(id)), type(std::move(type)) {}
+        // Constructor that receives the left and right operands and the operation
+        BinOp(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right, BinOpType op);
 
-    Formals::Formals(std::shared_ptr<Formal> formal) : Node(), formals({std::move(formal)}) {}
 
-    void Formals::push_front(const std::shared_ptr<Formal> &formal) {
-        formals.insert(formals.begin(), formal);
-    }
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    void Formals::push_back(const std::shared_ptr<Formal> &formal) {
-        formals.push_back(formal);
-    }
+    /* Binary relational operation */
+    class RelOp : public Exp {
+    public:
+        // Left operand
+        std::shared_ptr<Exp> left;
+        // Right operand
+        std::shared_ptr<Exp> right;
+        // Operation
+        RelOpType op;
 
-    FuncDecl::FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> return_type, std::shared_ptr<Formals> formals,
-                       std::shared_ptr<Statements> body)
-            : Node(), id(std::move(id)), return_type(std::move(return_type)), formals(std::move(formals)),
-              body(std::move(body)) {}
+        // Constructor that receives the left and right operands and the operation
+        RelOp(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right, RelOpType op);
 
-    Funcs::Funcs(std::shared_ptr<FuncDecl> func) : Node(), funcs({std::move(func)}) {}
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 
-    void Funcs::push_front(const std::shared_ptr<FuncDecl> &func) {
-        funcs.insert(funcs.begin(), func);
-    }
+    /* Unary logical NOT operation */
+    class Not : public Exp {
+    public:
+        // Operand
+        std::shared_ptr<Exp> exp;
 
-    void Funcs::push_back(const std::shared_ptr<FuncDecl> &func) {
-        funcs.push_back(func);
-    }
+        // Constructor that receives the operand
+        explicit Not(std::shared_ptr<Exp> exp);
 
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Binary logical AND operation */
+    class And : public Exp {
+    public:
+        // Left operand
+        std::shared_ptr<Exp> left;
+        // Right operand
+        std::shared_ptr<Exp> right;
+
+        // Constructor that receives the left and right operands
+        And(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Binary logical OR operation */
+    class Or : public Exp {
+    public:
+        // Left operand
+        std::shared_ptr<Exp> left;
+        // Right operand
+        std::shared_ptr<Exp> right;
+
+        // Constructor that receives the left and right operands
+        Or(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Type symbol */
+    class Type : public Node {
+    public:
+        // Type
+        BuiltInType type;
+
+        // Constructor that receives the type
+        explicit Type(BuiltInType type);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Type cast */
+    class Cast : public Exp {
+    public:
+        // Expression to be cast
+        std::shared_ptr<Exp> exp;
+        // Target type
+        std::shared_ptr<Type> target_type;
+
+        // Constructor that receives the expression and the target type
+        Cast(std::shared_ptr<Exp> exp, std::shared_ptr<Type> type);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* List of expressions */
+    class ExpList : public Node {
+    public:
+        // List of expressions
+        std::vector<std::shared_ptr<Exp>> exps;
+
+        // Constructor that receives no expressions
+        ExpList() = default;
+
+        // Constructor that receives the first expression
+        explicit ExpList(std::shared_ptr<Exp> exp);
+
+        // Method to add an expression at the beginning of the list
+        void push_front(const std::shared_ptr<Exp> &exp);
+
+        // Method to add an expression at the end of the list
+        void push_back(const std::shared_ptr<Exp> &exp);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Function call */
+    class Call : public Exp, public Statement {
+    public:
+        // Function identifier
+        std::shared_ptr<ID> func_id;
+        // List of arguments as expressions
+        std::shared_ptr<ExpList> args;
+
+        // Constructor that receives the function identifier and the list of arguments
+        Call(std::shared_ptr<ID> func_id, std::shared_ptr<ExpList> args);
+
+        // Constructor that receives only the function identifier (for parameterless functions)
+        explicit Call(std::shared_ptr<ID> func_id);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* List of statements */
+    class Statements : public Statement {
+    public:
+        // List of statements
+        std::vector<std::shared_ptr<Statement>> statements;
+
+        // Constructor that receives no statements
+        Statements() = default;
+
+        // Constructor that receives the first statement
+        explicit Statements(std::shared_ptr<Statement> statement);
+
+        // Method to add a statement at the beginning of the list
+        void push_front(const std::shared_ptr<Statement> &statement);
+
+        // Method to add a statement at the end of the list
+        void push_back(const std::shared_ptr<Statement> &statement);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Break statement */
+    class Break : public Statement {
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Continue statement */
+    class Continue : public Statement {
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Return statement */
+    class Return : public Statement {
+    public:
+        // Expression to be returned. If the return is expressionless, this field is nullptr
+        std::shared_ptr<Exp> exp;
+
+        // Constructor that receives the expression to be returned
+        explicit Return(std::shared_ptr<Exp> exp = nullptr);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* If statement */
+    class If : public Statement {
+    public:
+        // Condition expression
+        std::shared_ptr<Exp> condition;
+        // Statement to be executed if the condition is true
+        std::shared_ptr<Statement> then;
+        // Statement to be executed if the condition is false. For an if statement without else, this field is nullptr
+        std::shared_ptr<Statement> otherwise;
+
+        // Constructor that receives the condition, the statement to be executed if the condition is true, and the statement to be executed if the condition is false
+        If(std::shared_ptr<Exp> condition, std::shared_ptr<Statement> then,
+           std::shared_ptr<Statement> otherwise = nullptr);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* While statement */
+    class While : public Statement {
+    public:
+        // Condition expression
+        std::shared_ptr<Exp> condition;
+        // Statement to be executed while the condition is true
+        std::shared_ptr<Statement> body;
+
+        // Constructor that receives the condition and the statement to be executed while the condition is true
+        While(std::shared_ptr<Exp> condition, std::shared_ptr<Statement> body);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Variable declaration */
+    class VarDecl : public Statement {
+    public:
+        // Identifier of the variable
+        std::shared_ptr<ID> id;
+        // Type of the variable
+        std::shared_ptr<Type> type;
+        // Initial value of the variable. If the variable is not initialized, this field is nullptr
+        std::shared_ptr<Exp> init_exp;
+
+        // Constructor that receives the identifier, the type, and the initial value expression
+        VarDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> type, std::shared_ptr<Exp> init_exp = nullptr);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Assignment statement */
+    class Assign : public Statement {
+    public:
+        // Identifier of the variable
+        std::shared_ptr<ID> id;
+        // Expression to be assigned
+        std::shared_ptr<Exp> exp;
+
+        // Constructor that receives the identifier and the expression to be assigned
+        Assign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Formal parameter */
+    class Formal : public Node {
+    public:
+        // Identifier of the parameter
+        std::shared_ptr<ID> id;
+        // Type of the parameter
+        std::shared_ptr<Type> type;
+
+        // Constructor that receives the identifier and the type
+        Formal(std::shared_ptr<ID> id, std::shared_ptr<Type> type);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* List of formal parameters */
+    class Formals : public Node {
+    public:
+        // List of formal parameters
+        std::vector<std::shared_ptr<Formal>> formals;
+
+        // Constructor that receives no parameters
+        Formals() = default;
+
+        // Constructor that receives the first formal parameter
+        explicit Formals(std::shared_ptr<Formal> formal);
+
+        // Method to add a formal parameter at the beginning of the list
+        void push_front(const std::shared_ptr<Formal> &formal);
+
+        // Method to add a formal parameter at the end of the list
+        void push_back(const std::shared_ptr<Formal> &formal);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Function declaration */
+    class FuncDecl : public Node {
+    public:
+        // Identifier of the function
+        std::shared_ptr<ID> id;
+        // Return type of the function
+        std::shared_ptr<Type> return_type;
+        // List of formal parameters
+        std::shared_ptr<Formals> formals;
+        // Body of the function
+        std::shared_ptr<Statements> body;
+
+        // Constructor that receives the identifier, the return type, the list of formal parameters, and the body
+        FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> return_type, std::shared_ptr<Formals> formals,
+                 std::shared_ptr<Statements> body);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* List of function declarations */
+    class Funcs : public Node {
+    public:
+        // List of function declarations
+        std::vector<std::shared_ptr<FuncDecl>> funcs;
+
+        // Constructor that receives no function declarations
+        Funcs() = default;
+
+        // Constructor that receives the first function declaration
+        explicit Funcs(std::shared_ptr<FuncDecl> func);
+
+        // Method to add a function declaration at the beginning of the list
+        void push_front(const std::shared_ptr<FuncDecl> &func);
+
+        // Method to add a function declaration at the end of the list
+        void push_back(const std::shared_ptr<FuncDecl> &func);
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
 }
+
+BinOpType convert_binop(std::string str)
+{
+    BinOpType res = 0;
+    if (str == "+")
+        res = ADD;
+    if (str == "+")
+        res = SUB;
+    if (str == "+")
+        res = MUL;
+    if (str == "+")
+        res = DIV;
+    return res;
+}
+
+BinOpType convert_relop(std::string str)
+{
+    BinOpType res = 0;
+    if (str == "=")
+        res = EQ;
+    if (str == "!=")
+        res = NE;
+    if (str == "<")
+        res = LT;
+    if (str == ">")
+        res = GT;
+    if (str == "<=")
+        res = LE;
+    if (str == ">=")
+        res = GE;
+    return res;
+}
+#define YYSTYPE std::shared_ptr<ast::Node>
+
+#endif //NODES_HPP

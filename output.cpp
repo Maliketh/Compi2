@@ -65,23 +65,23 @@ namespace output {
     }
 
     void PrintVisitor::visit(ast::Num &node) {
-        print_indented("Num: " + std::to_string(node.value));
+        PrintVisitor::print_indented("Num: " + std::to_string(node.value));
     }
 
     void PrintVisitor::visit(ast::NumB &node) {
-        print_indented("NumB: " + std::to_string(node.value));
+        PrintVisitor::print_indented("NumB: " + std::to_string(node.value));
     }
 
     void PrintVisitor::visit(ast::String &node) {
-        print_indented("String: " + node.value);
+        PrintVisitor::print_indented("String: " + node.value);
     }
 
     void PrintVisitor::visit(ast::Bool &node) {
-        print_indented("Bool: " + std::string((node.value ? "true" : "false")));
+        PrintVisitor::print_indented("Bool: " + std::string((node.value ? "true" : "false")));
     }
 
     void PrintVisitor::visit(ast::ID &node) {
-        print_indented("ID: " + node.value);
+        PrintVisitor::print_indented("ID: " + node.value);
     }
 
     void PrintVisitor::visit(ast::BinOp &node) {
