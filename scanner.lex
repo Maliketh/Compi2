@@ -1,6 +1,6 @@
 %{
-
 #include "output.hpp"
+#include "parser.tab.h"
 %}
 
 %option yylineno
@@ -40,7 +40,8 @@ continue                return CONTINUE;
 =                       return ASSIGN;
 
 (==|!=|<|>|<=|>=)      return RELOP;
-[\+\-\*\/]             return BINOP;
+[\+\-]                 return BINOP_ADD;
+[\*\/]                 return BINOP_MUL;
 
 \/\/[^\n\r]*           return COMMENT;
 

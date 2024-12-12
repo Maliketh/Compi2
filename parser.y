@@ -31,6 +31,9 @@ using namespace std;
 %token CONTINUE
 %token SC
 %token COMMA
+%token ERR_UNCLOSED_STR;
+%token ERR_GENERAL;
+%token COMMENT;
 
 // Operator precedence and associativity
 %nonassoc IF
@@ -39,7 +42,8 @@ using namespace std;
 %left OR
 %left AND
 %left RELOP
-%left BINOP
+%left BINOP_ADD
+%left BINOP_MUL
 %right NOT
 %left LPAREN
 %left RPAREN
@@ -55,8 +59,20 @@ Program:
 ;
 
 Funcs:
-    FuncDecl { $$ = std::make_shared<ast::Funcs>(); $$->push_back($1); }
-    | Funcs FuncDecl { $$ = $1; $$->push_back($2); }
+    FuncDecl {
+        $$ = std::make_shared<ast::Funcs>();
+        auto funcs_ptr = std::dynamic_pointer_cast<ast::Funcs>($$);
+        if (funcs_ptr) {
+            funcs_ptr->push_back($1);
+        }
+    }
+    | Funcs FuncDecl {
+        $$ = $1;
+        auto funcs_ptr = std::dynamic_pointer_cast<ast::Funcs>($$);
+        if (funcs_ptr) {
+            funcs_ptr->push_back($2);
+        }
+    }
 ;
 
 FuncDecl:
@@ -67,9 +83,20 @@ FuncDecl:
 ;
 
 Formals:
-    /* empty */ { $$ = std::make_shared<ast::Formals>(); }
-    | Formal { $$ = std::make_shared<ast::Formals>(); $$->push_back($1); }
-    | Formals COMMA Formal { $$ = $1; $$->push_back($3); }
+    /* epsilon */ { $$ = std::make_shared<ast::Formals>(); }
+    | Formal { $$ = std::make_shared<ast::Formals>();
+              auto formals_ptr = std::dynamic_pointer_cast<ast::Formals>($$);
+              if (formals_ptr) {
+                  formals_ptr->push_back($1);
+              }
+            }
+    | Formals COMMA Formal {
+              $$ = $1;
+              auto formals_ptr = std::dynamic_pointer_cast<ast::Formals>($$);
+              if (formals_ptr) {
+                  formals_ptr->push_back($3);
+              }
+            }
 ;
 
 Formal:
@@ -77,8 +104,14 @@ Formal:
 ;
 
 Statements:
-    /* empty */ { $$ = std::make_shared<ast::Statements>(); }
-    | Statements Statement { $$ = $1; $$->push_back($2); }
+    /* epsilon */ { $$ = std::make_shared<ast::Statements>(); }
+    | Statements Statement {
+              $$ = $1;
+              auto statements_ptr = std::dynamic_pointer_cast<ast::Statements>($$);
+              if (statements_ptr) {
+                  statements_ptr->push_back($2);
+              }
+            }
 
 ;
 Statement:
@@ -94,9 +127,15 @@ Call :
     ID LPAREN ExpList RPAREN { $$ = std::make_shared<ast::Call>($1, $3);} |
     ID LPAREN RPAREN {  $$ = std::make_shared<ast::Call>($1); }
 ;
-ExpList :
-    Exp { $$ = std::make_shared<ast::ExpList>($1);} |
-    Exp COMMA ExpList {$$ = std::dynamic_pointer_cast<ast::ExpList>($3); $$->exps.push_front($1);}
+ExpList:
+    Exp {
+        $$ = std::make_shared<ast::ExpList>();
+        $$->push_back($1);
+    }
+    | Exp COMMA ExpList {
+        $$ = std::dynamic_pointer_cast<ast::ExpList>($3);
+        $$->push_front($1);
+    };
 ;
 Type :
     INT  {$$ = std::make_shared<ast::Type>(3); } |
@@ -105,7 +144,8 @@ Type :
 ;
 Exp :
     LPAREN Exp RPAREN { $$ = std::make_shared<ast::Exp>($2); } |
-    Exp BINOP Exp { $$ = std::make_shared<ast::BinOp>($1, $3, convert_binop($2)); }  |
+    Exp BINOP_ADD Exp { $$ = std::make_shared<ast::BinOp>($1, $3, convert_binop($2)); }  |
+    Exp BINOP_MUL Exp { $$ = std::make_shared<ast::BinOp>($1, $3, convert_binop($2)); }  |
     ID { $$ = std::make_shared<ast::ID>($1);} |
     Call { $$ = std::dynamic_pointer_cast<ast::Call>($1); } |
     NUM { $$ = std::make_shared<ast::Num>($1); } |
@@ -121,7 +161,7 @@ Exp :
 
 
 void yyerror(const char * message) {
-    errorSyn(yylineno);
+    output::errorSyn(yylineno);
     exit(0);
 }
 
