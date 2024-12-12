@@ -26,6 +26,7 @@ namespace ast {
         GE  // Greater than or equal
     };
 
+
     /* Built-in types */
     enum BuiltInType {
         VOID,
@@ -226,6 +227,8 @@ namespace ast {
             visitor.visit(*this);
         }
     };
+
+
 
     /* Type cast */
     class Cast : public Exp {
@@ -489,37 +492,7 @@ namespace ast {
     };
 }
 
-int convert_binop(std::string str)
-{
-    int res = 0;
-    if (str == "+")
-        res = ast::ADD;
-    if (str == "+")
-        res = ast::SUB;
-    if (str == "+")
-        res = ast::MUL;
-    if (str == "+")
-        res = ast::DIV;
-    return res;
-}
 
-int convert_relop(std::string str)
-{
-    int res = 0;
-    if (str == "=")
-        res = ast::EQ;
-    if (str == "!=")
-        res = ast::NE;
-    if (str == "<")
-        res = ast::LT;
-    if (str == ">")
-        res = ast::GT;
-    if (str == "<=")
-        res = ast::LE;
-    if (str == ">=")
-        res = ast::GE;
-    return res;
-}
 #define YYSTYPE std::shared_ptr<ast::Node>
 
 #endif //NODES_HPP

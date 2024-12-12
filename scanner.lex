@@ -39,9 +39,18 @@ continue                return CONTINUE;
 \}                      return RBRACE;
 =                       return ASSIGN;
 
-(==|!=|<|>|<=|>=)      return RELOP;
-[\+\-]                 return BINOP_ADD;
-[\*\/]                 return BINOP_MUL;
+(==)                    return RELOP_EQ;
+(!=)                    return RELOP_NEQ;
+(<)                     return RELOP_LE;
+(>)                     return RELOP_GE;
+(<=)                    return RELOP_LEQ;
+(>=)                    return RELOP_GEQ;
+
+
+[\+]                 return BINOP_ADD;
+[\/]                 return BINOP_DIV;
+[\-]                 return BINOP_SUB;
+[\*]                 return BINOP_MUL;
 
 \/\/[^\n\r]*           return COMMENT;
 
