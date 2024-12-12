@@ -38,10 +38,8 @@ using namespace std;
 %right ASSIGN
 %left OR
 %left AND
-%left RELOP_EQ
-%left RELOP_REL
-%left BINOP_ADD
-%left BINOP_MUL
+%left RELOP
+%left BINOP
 %right NOT
 %left LPAREN
 %left RPAREN
@@ -84,8 +82,8 @@ Statements:
 
 ;
 Statement:
-    Expr SC { $$ = std::make_shared<ast::ExprStatement>($1); }
-    | RETURN Expr SC { $$ = std::make_shared<ast::Return>($2); }
+    Exp SC { $$ = std::make_shared<ast::ExprStatement>($1); }
+    | RETURN Exp SC { $$ = std::make_shared<ast::Return>($2); }
     | RETURN SC { $$ = std::make_shared<ast::Return>(); }
     | BREAK SC { $$ = std::make_shared<ast::Break>(); }
     | CONTINUE SC { $$ = std::make_shared<ast::Continue>(); }

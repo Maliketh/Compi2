@@ -1,10 +1,11 @@
 #ifndef OUTPUT_HPP
 #define OUTPUT_HPP
 
+#include "nodes.hpp"
 #include <vector>
 #include <string>
 #include "visitor.hpp"
-#include "nodes.hpp"
+
 
 namespace output {
     /* Error handling functions */
