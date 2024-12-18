@@ -1,6 +1,7 @@
 %{
 #include "output.hpp"
 #include "parser.tab.h"
+#include "string"
 %}
 
 %option yylineno
@@ -54,12 +55,14 @@ continue                return CONTINUE;
 
 \/\/[^\n\r]*           return COMMENT;
 
-[a-zA-Z][a-zA-Z0-9]*    return ID;
+[a-zA-Z][a-zA-Z0-9]*    {yylval = std::make_shared<ast::ID>(yytext); return ID;}
 (0|[1-9][0-9]*)         return NUM;
-(0|[1-9][0-9]*)+b       return NUM_B;
+(0|[1-9][0-9]*)+b       { std::string my_text(yytext);
+                                        yylval=std::make_shared<ast::NumB>(my_text.substr(0,my_text.length()-1).c_str()); return NUM_B; };
 
-\"([^"\\]|\\.)*\"        return STRING;
-\"{printable_ascii}*\"   return STRING;
+
+\"([^"\\]|\\.)*\"        { yylval=std::make_shared<ast::String>(yytext); return STRING; }
+\"{printable_ascii}*\"   { yylval=std::make_shared<ast::String>(yytext); return STRING; }
 
 {whitespace}            ;
 .                       return ERR_GENERAL;
