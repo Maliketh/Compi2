@@ -54,7 +54,7 @@ using namespace std;
 // Grammar Rules
 
 Program:
-    Funcs { program = $1; }
+    Funcs { program = std::dynamic_pointer_cast<ast::Funcs>($1); }
 ;
 
 Funcs:
@@ -64,10 +64,10 @@ Funcs:
     }
     | FuncDecl Funcs
     {
-        $$ = $2;
+        $$ = std::dynamic_pointer_cast<ast::Funcs>($2);
         auto funcs_ptr = std::dynamic_pointer_cast<ast::Funcs>($$);
         if (funcs_ptr) {
-            funcs_ptr->push_back(std::dynamic_pointer_cast<ast::FuncDecl>($1));
+            funcs_ptr->push_front(std::dynamic_pointer_cast<ast::FuncDecl>($1));
         }
     }
 ;
@@ -78,9 +78,17 @@ FuncDecl:
         auto arg1 = std::dynamic_pointer_cast<ast::ID>($2);
         auto arg2 = std::dynamic_pointer_cast<ast::Type>($1);
         auto arg3 = std::dynamic_pointer_cast<ast::Formals>($4);
-        auto arg4 = std::dynamic_pointer_cast<ast::Statements>($6);
+        auto arg4 = std::dynamic_pointer_cast<ast::Statements>($7);
         $$ = std::make_shared<ast::FuncDecl>(arg1, arg2, arg3, arg4);
-    }
+    } |
+    VOID ID LPAREN Formals RPAREN LBRACE Statements RBRACE
+        {
+            auto arg1 = std::dynamic_pointer_cast<ast::ID>($2);
+            auto arg2 = std::make_shared<ast::Type>(ast::BuiltInType::VOID);
+            auto arg3 = std::dynamic_pointer_cast<ast::Formals>($4);
+            auto arg4 = std::dynamic_pointer_cast<ast::Statements>($7);
+            $$ = std::make_shared<ast::FuncDecl>(arg1, arg2, arg3, arg4);
+        }
 ;
 
 RetType:
@@ -88,17 +96,13 @@ RetType:
     {
         $$ = std::dynamic_pointer_cast<ast::Type>($1);
     }
-    | VOID
-    {
-        $$ = std::make_shared<ast::Type>(ast::BuiltInType::VOID);
-    }
 ;
 
 Formals:
     /* epsilon */ { $$ = std::make_shared<ast::Formals>(); }
     | FormalsList
     {
-        $$ = $1;  // Assign the FormalsList directly to Formals
+        $$ = std::dynamic_pointer_cast<ast::Formals>($1);
     }
 ;
 
@@ -126,7 +130,7 @@ Statements:
       Statement { $$ = std::make_shared<ast::Statements>(std::dynamic_pointer_cast<ast::Statement>($1)); }
     | Statements Statement
     {
-        $$ = $1;
+        $$ = std::dynamic_pointer_cast<ast::Statements>($1);
         auto statements_ptr = std::dynamic_pointer_cast<ast::Statements>($$);
         if (statements_ptr) {
             statements_ptr->push_back(std::dynamic_pointer_cast<ast::Statement>($2));
@@ -135,7 +139,7 @@ Statements:
 ;
 
 Statement:
-    LBRACE Statements RBRACE { $$ = $2; }
+    LBRACE Statements RBRACE { $$ = std::dynamic_pointer_cast<ast::Statements>($2); }
     | Type ID SC
     {
         auto arg1 = std::dynamic_pointer_cast<ast::ID>($2);
@@ -155,7 +159,7 @@ Statement:
         auto arg2 = std::dynamic_pointer_cast<ast::Exp>($3);
         $$ = std::make_shared<ast::Assign>(arg1, arg2);
     }
-    | Call SC { $$ = $1; }
+    | Call SC { $$ = std::dynamic_pointer_cast<ast::Call>($1); }
     | RETURN SC { $$ = std::make_shared<ast::Return>(); }
     | RETURN Exp SC { $$ = std::make_shared<ast::Return>(std::dynamic_pointer_cast<ast::Exp>($2)); }
     | IF LPAREN Exp RPAREN Statement %prec IF
@@ -214,6 +218,18 @@ Exp_cast :
 
 Exp_t :
     LPAREN Exp RPAREN { $$ = $2; } |
+    Exp AND Exp
+    {
+            auto arg1 = std::dynamic_pointer_cast<ast::Exp>($1);
+            auto arg2 = std::dynamic_pointer_cast<ast::Exp>($3);
+            $$ = std::make_shared<ast::And>(arg1, arg2);
+    }  |
+    Exp OR Exp
+    {
+            auto arg1 = std::dynamic_pointer_cast<ast::Exp>($1);
+            auto arg2 = std::dynamic_pointer_cast<ast::Exp>($3);
+            $$ = std::make_shared<ast::Or>(arg1, arg2);
+    }  |
     Exp BINOP_ADD Exp
     {
         auto arg1 = std::dynamic_pointer_cast<ast::Exp>($1);
@@ -239,10 +255,10 @@ Exp_t :
         $$ = std::make_shared<ast::BinOp>(arg1, arg2, ast::BinOpType::DIV);
     }  |
     ID { $$ = $1;} |
-    Call { $$ = $1; } |
-    NUM { $$ = std::make_shared<ast::Num>(std::dynamic_pointer_cast<std::string>($1)->c_str()); } |
-    NUM_B {$$ = std::make_shared<ast::NumB>(std::dynamic_pointer_cast<std::string>($1)->c_str());} |
-    STRING {$$ = std::make_shared<ast::String>(std::dynamic_pointer_cast<std::string>($1)->c_str());} |
+    Call { $$ = std::dynamic_pointer_cast<ast::Call>($1); } |
+    NUM { $$ = $1; } |
+    NUM_B {$$ = $1;} |
+    STRING {$$ = $1;} |
     TRUE {$$ = std::make_shared<ast::Bool>(1);} |
     FALSE {$$ = std::make_shared<ast::Bool>(0);} |
     NOT Exp {$$ = std::make_shared<ast::Not>(std::dynamic_pointer_cast<ast::Exp>($2));}|
@@ -297,4 +313,4 @@ void yyerror(const char * message) {
 
 
 
-// TODO: Place any ad
+// TODO:ï¿½Placeï¿½anyï¿½ad
