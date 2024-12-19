@@ -82,13 +82,14 @@ FuncDecl:
         $$ = std::make_shared<ast::FuncDecl>(arg1, arg2, arg3, arg4);
     } |
     VOID ID LPAREN Formals RPAREN LBRACE Statements RBRACE
-        {
+    {
             auto arg1 = std::dynamic_pointer_cast<ast::ID>($2);
             auto arg2 = std::make_shared<ast::Type>(ast::BuiltInType::VOID);
             auto arg3 = std::dynamic_pointer_cast<ast::Formals>($4);
             auto arg4 = std::dynamic_pointer_cast<ast::Statements>($7);
             $$ = std::make_shared<ast::FuncDecl>(arg1, arg2, arg3, arg4);
-        }
+    }
+
 ;
 
 RetType:
@@ -113,7 +114,7 @@ FormalsList:
     | FormalDecl COMMA FormalsList {
             $$ = std::dynamic_pointer_cast<ast::Formals>($3);
           auto pointer = std::dynamic_pointer_cast<ast::Formal>($1);
-          std::dynamic_pointer_cast<ast::Formals>($$)->push_back(pointer);
+          std::dynamic_pointer_cast<ast::Formals>($$)->push_front(pointer);
       }
     ;
 
@@ -126,6 +127,8 @@ FormalDecl:
         $$ = std::make_shared<ast::Formal>(pointer2, pointer1);
     }
     ;
+
+
 Statements:
       Statement { $$ = std::make_shared<ast::Statements>(std::dynamic_pointer_cast<ast::Statement>($1)); }
     | Statements Statement
@@ -153,7 +156,7 @@ Statement:
         auto arg3 = std::dynamic_pointer_cast<ast::Exp>($4);
         $$ = std::make_shared<ast::VarDecl>(arg1, arg2, arg3);
     }
-    | ID ASSIGN Exp_t SC
+    | ID ASSIGN Exp SC
     {
         auto arg1 = std::dynamic_pointer_cast<ast::ID>($1);
         auto arg2 = std::dynamic_pointer_cast<ast::Exp>($3);
